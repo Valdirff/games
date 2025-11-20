@@ -6,6 +6,33 @@
     <title>Jogo ITO</title>
     <style>
         :root { --safe-height: 100dvh; }
+        
+        button {
+            padding: 14px;
+            margin: 8px 0;
+            width: 100%;
+            font-size: clamp(14px, 4vw, 18px);
+            font-weight: bold;   /* 🔥 deixa o texto dos botões em negrito */
+            background: #6a0dad;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .btn-animado {
+            background: linear-gradient(45deg, red, orange, yellow, green, blue, purple, pink);
+            background-size: 600% 600%;
+            animation: rainbow 3s ease infinite;
+        }
+
+
         body {
             font-family: Arial, sans-serif;
             background: #0d0d0d;
@@ -50,9 +77,13 @@
             height: clamp(48px, 14vw, 70px);
             border-radius: 50%;
             cursor: pointer;
-            border: 4px solid transparent;
+            border: 3px solid rgba(255,255,255,0.15);
             position: relative;
+        
+            /* escurece automaticamente usando mix com preto */
+            background-color: color-mix(in srgb, var(--corBase) 75%, black);
         }
+
         .color-selected::after {
             content: "";
             position: absolute;
@@ -66,12 +97,16 @@
             font-size: clamp(40px, 12vw, 70px);
             animation: pulse 2s infinite;
         }
+        
         @keyframes pulse {
-            0% { transform: scale(1); text-shadow: 0 0 10px #b84bff; }
-            50% { transform: scale(1.1); text-shadow: 0 0 22px #d28bff; }
-            100% { transform: scale(1); text-shadow: 0 0 10px #b84bff; }
+            0% { transform: scale(1); text-shadow: none; }
+            50% { transform: scale(1.1); text-shadow: none; }
+            100% { transform: scale(1); text-shadow: none; }
         }
+
         #resultadoTextoNumero span {
+            font-family: inherit;      /* mesma fonte do h1 */
+            font-weight: bold;  
             font-size: clamp(140px, 34vw, 260px);
             line-height: 1;
             display: block;
@@ -86,6 +121,60 @@
             color: white;
             border-radius: 8px;
         }
+        
+        .ocultar-degrade {
+            width: 100%;
+            height: 52vh;
+            border-radius: 18px;
+        
+            /* 3 tonalidades da cor selecionada */
+            background: linear-gradient(
+                135deg,
+                color-mix(in srgb, var(--cor) 100%, white 15%),
+                color-mix(in srgb, var(--cor) 100%, black 20%),
+                color-mix(in srgb, var(--cor) 100%, black 40%)
+            );
+        
+            background-size: 250% 250%;
+            animation: degradeMove 3.5s ease-in-out infinite;
+        }
+        
+        @keyframes degradeMove {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .tema-info {
+            margin-top: -10px;
+            margin-bottom: 18px;
+            font-size: 14px;
+            color: #d6c27a; /* dourado suave */
+            text-align: center;
+        }
+        
+        .tema-info .linha-container {
+            margin-top: 4px;
+            width: 100%;
+        }
+        
+        .tema-info .linha-container hr {
+            border: none;
+            border-top: 1px solid #d6c27a;
+            opacity: 0.6;
+            width: 100%;
+        }
+        
+        .tema-info .labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: -6px;
+        }
+
+
+        
+
         .glow { box-shadow: 0 0 28px var(--corTema); }
     </style>
 </head>
@@ -93,26 +182,29 @@
 
 <div id="telaInicio" class="tela" style="display:block;">
     <h1>ITO</h1>
-    <button onclick="trocarTela('tela1')">Começar</button>
+    <button class="btn-animado" onclick="trocarTela('tela1')">Começar</button>
 </div>
 
 <div id="tela1" class="tela">
     <h2>Escolha sua cor</h2>
     <div class="players" id="colorArea"></div>
-    <button onclick="confirmarCor()">Confirmar</button>
+    <button class="btn-animado" onclick="confirmarCor()">Confirmar</button>
 </div>
 
 <div id="tela2" class="tela">
-    <h2>O que deseja sortear?</h2>
     <button onclick="mostrarTema()">Sortear Tema</button>
     <button onclick="mostrarNumero()">Sortear Número</button>
 </div>
 
 <div id="telaTema" class="tela">
     <h2 id="resultadoTextoTema"></h2>
+
+    <div id="temaExplicacao" class="tema-info"></div>  <!-- AQUI -->
+
     <button class="small-btn" onclick="mostrarNumero()">Sortear Número</button>
     <button class="small-btn" onclick="mostrarTema()">Sortear Novamente</button>
 </div>
+
 
 <div id="telaNumero" class="tela">
     <div id="resultadoTextoNumero"></div>
@@ -124,21 +216,197 @@
 
 <script>
 const temas = [
-    "Nível de Estresse: 'Relax total' a 'Vou explodir!'",
-    "Nível de Fofura: 'Sem graça' a 'Vontade de apertar!'"
+    { nome: "Nível de Estresse", min: "Relax total", max: "Vou explodir!" },
+    { nome: "Nível de Fofura", min: "Sem graça", max: "Vontade de apertar!" },
+
+    { nome: "Coisas que te fazem feliz", min: "Felicidade pura", max: "É pra fazer cosquinha?" },
+
+    { nome: "Armas para lutar contra zumbis", min: "Adiós, zumbi!", max: "Sei nem quem é" },
+
+    { nome: "Atletas famosos", min: "Grande campeão", max: "Pouca gente conhece" },
+
+    { nome: "Comidas famosas", min: "Encontradas em todo o mundo", max: "Não seria" },
+
+    { nome: "Personagens da ficção que você gostaria de ser", min: "Seria muito", max: "Fez poucas participações" },
+
+    { nome: "Celebridades de filmes e séries mais conhecidas", min: "Está sempre nos lançamentos", max: "Cheiro normal" },
+
+    { nome: "Coisas que cheiram bem", min: "Faria um perfume disso", max: "Não teria isso" },
+
+    { nome: "Souvenirs que você gostaria de ter", min: "Teria mais de mil", max: "Não faria" },
+
+    { nome: "Coisas que você gostaria de fazer ao se aposentar", min: "Faria com toda certeza", max: "Não tão difícil" },
+
+    { nome: "Coisas difíceis de suportar", min: "Praticamente impossível", max: "Pouco importante" },
+
+    { nome: "Coisas importantes para fazer sucesso nas redes sociais", min: "Obrigatório", max: "Desnecessária" },
+
+    { nome: "Habilidades essenciais para um comediante", min: "Obrigatória", max: "Levinho" },
+
+    { nome: "Coisas pesadas", min: "Pesado", max: "Ninguém conhece" },
+
+    { nome: "Canções famosas", min: "Todo mundo canta junto", max: "Sei nem quem é" },
+
+    { nome: "Figuras históricas populares", min: "Figura importante", max: "Vale pouco" },
+
+    { nome: "Marcas mais valiosas", min: "Vale bilhões", max: "Nem queria" },
+
+    { nome: "Coisas que você desejava quando criança", min: "Queria pra caramba", max: "Não quero" },
+
+    { nome: "Coisas que você quer fazer ao acordar", min: "Quero muito", max: "Inútil" },
+
+    { nome: "Coisas úteis em uma casa", min: "Muito útil", max: "Nem é" },
+
+    { nome: "Sons que te fazem feliz", min: "Felicidade para os ouvidos", max: "Não faz" },
+
+    { nome: "Coisas que te fazem sentir amado(a)", min: "É puro amor", max: "Cringe" },
+
+    { nome: "O que é legal para um estudante do ensino médio?", min: "Super", max: "Nem tanto" },
+
+    { nome: "Presentes de aniversário comuns", min: "Todo mundo já ganhou", max: "Até eu encarava" },
+
+    { nome: "Vilões mais temíveis", min: "Me faz ter pesadelos", max: "Ninguém vai" },
+
+    { nome: "Países populares para viajar", min: "Todo mundo já foi", max: "Pouco fofinho" },
+
+    { nome: "Coisas fofinhas", min: "Um cuti-cuti", max: "Pouco feliz" },
+
+    { nome: "Coisas que seu amor faz e te deixam feliz", min: "Muito feliz", max: "Dá pra fazer" },
+
+    { nome: "Atividades difíceis de fazer sozinho(a)", min: "Impossível", max: "Não gostaria" },
+
+    { nome: "Animais nos quais você gostaria de montar", min: "Queria demais", max: "Inútil" },
+
+    { nome: "Habilidades úteis para o trabalho", min: "Muito útil", max: "Não te faz muito feliz" },
+
+    { nome: "O que te faz feliz? (Criança)", min: "Isso sim é felicidade", max: "Pouco" },
+
+    { nome: "Melhores lugares do mundo (Pense como um gato)", min: "Muito confortável", max: "Pouco confortável" },
+
+    { nome: "Tamanho de animais", min: "Enorme", max: "Pequeno" },
+
+    { nome: "Lugares que você vai com frequência", min: "Vai muito", max: "Desconhecido" },
+
+    { nome: "Brinquedos mais conhecidos", min: "Toda criança já teve um", max: "Praticamente uma ofensa" },
+
+    { nome: "Palavras que você gostaria de ouvir", min: "Mais que um elogio", max: "Nem escolheria" },
+
+    { nome: "Coisas leves", min: "Levíssimo", max: "Pouco leve" },
+
+    { nome: "Drinques populares", min: "Todo mundo já bebeu", max: "Ninguém bebe isso" },
+
+    { nome: "Coisas que te deixam com sono", min: "Acordadíssimo", max: "Zzzzz…" },
+
+    { nome: "Veículos mais comuns", min: "Tem um em cada esquina", max: "Nunca vi" },
+
+    { nome: "Frases estranhas ditas por crianças", min: "Muito estranho", max: "Normal" },
+
+    { nome: "Pedidos de casamento que te fariam feliz", min: "Algo memorável", max: "Aquele de passar vergonha" },
+
+    { nome: "Itens úteis no deserto", min: "Salvaria sua vida", max: "Não serve para nada" },
+
+    { nome: "Coisas que te surpreenderiam se saíssem do seu corpo", min: "Não dá pra imaginar isso", max: "Algo comum" },
+
+    { nome: "Coisas que te surpreenderiam embaixo de uma pedra", min: "Algo surpreendente", max: "Nada interessante" },
+
+    { nome: "Itens de um baú de tesouro", min: "Queria muito", max: "Não gostaria" },
+
+    { nome: "Momentos históricos para visitar", min: "Iria agora", max: "Fuja, louco!" },
+
+    { nome: "Alimentos saudáveis", min: "Puro suco de saúde", max: "Nada saudável" },
+
+    { nome: "Coisas confiáveis", min: "Confiável eternamente", max: "Pouco confiável" },
+
+    { nome: "Festivais que você gostaria de participar", min: "Gastaria o salário pra ir", max: "Não iria nem pagando" },
+
+    { nome: "Heróis que você não enfrentaria (vilão)", min: "Tenho medo até da sombra", max: "Não gostaria de descobrir" },
+
+    { nome: "Descobertas científicas desejadas", min: "Merece um Nobel", max: "Inútil" },
+
+    { nome: "Itens úteis para uma ilha deserta", min: "Muito útil", max: "Aquele que flopou muito" },
+
+    { nome: "Jogos de tabuleiro", min: "Digno de um Spiel", max: "Isso é ofensivo" },
+
+    { nome: "Piadas mais engraçadas", min: "Ri litros", max: "Nem tanto" },
+
+    { nome: "Itens diferentões", min: "Isso é muito legal", max: "Nada interessante" },
+
+    { nome: "Golpes especiais", min: "Impõe respeito", max: "Não botou medo" },
+
+    { nome: "Características de amigos", min: "BFF na certa", max: "Ninguém se importa" },
+
+    { nome: "Títulos de livros curiosos", min: "Vou comprar", max: "Feitiço comum" },
+
+    { nome: "Feitiço favorito (mago)", min: "Usaria toda hora", max: "Nada AU-AUdacioso" },
+
+    { nome: "O que te faz feliz? (Cachorro)", min: "De balançar a cauda", max: "De boas" },
+
+    { nome: "Frases surpreendentes ditas por professor", min: "Por essa ninguém esperava", max: "Faz parte da aula" },
+
+    { nome: "Coisas mais bonitas do mundo", min: "Visão do paraíso", max: "Pouco conhecida" },
+
+    { nome: "Coisas populares com crianças", min: "Muito famosa", max: "Nunca vi" },
+
+    { nome: "Doces conhecidos", min: "Vende em todo lugar", max: "Só ouço falar" },
+
+    { nome: "Nomes legais", min: "Meu filho vai ter", max: "Muito comum" },
+
+    { nome: "Amor verdadeiro ou aventura?", min: "Amor verdadeiro", max: "Aventura" },
+
+    { nome: "Coisas que você faz quando está feliz", min: "Faço muito", max: "Nunca faço" },
+
+    { nome: "Pose de herói", min: "Épica", max: "Um desânimo só" },
+
+    { nome: "Lugares que animariam um explorador", min: "Bora lá, agora!", max: "Não gostaria" },
+
+    { nome: "Mundos imaginários", min: "Viveria lá pra sempre", max: "Inútil" },
+
+    { nome: "Habilidades em relacionamentos", min: "Essencial", max: "Fraco demais" },
+
+    { nome: "Personagens mais fortes da ficção", min: "Indestrutível", max: "Nada feliz" },
+
+    { nome: "Coisas que você gostaria de encontrar no bolso", min: "Alegria pura", max: "Ridículo" },
+
+    { nome: "Lugares de encontros românticos", min: "Está acontecendo um agora", max: "Poucos encontros" },
+
+    { nome: "Careta engraçada", min: "Muito engraçado!", max: "Isso é ridículo" },
+
+    { nome: "Um prato pra vida inteira", min: "Comeria agora", max: "Não escolheria" },
+
+    { nome: "Ações que exigem coragem", min: "Pura coragem", max: "Nada corajoso" },
+
+    { nome: "Coisas ruins na aula (adolescente)", min: "Que vergonha!", max: "Nem tão ruim" },
+
+    { nome: "Seu alter ego seria…", min: "É meu tipo", max: "Não gostaria" },
+
+    { nome: "Piores temperamentos da ficção", min: "Explosivo", max: "Desnecessária" },
+
+    { nome: "Habilidades importantes para streamer", min: "Obrigatória", max: "Fraquinha" }
 ];
 
+
 let corEscolhida = null;
+let ultimoNumero = null; // mantém o número atual
 const cores = ["red","blue","green","purple","orange","pink","yellow","brown","black","gray"];
 const colorArea = document.getElementById("colorArea");
 
 cores.forEach(c=>{
     let btn=document.createElement("div");
     btn.className="color-btn";
-    btn.style.background=c;
-    btn.onclick=()=>selecionarCor(btn,c);
+
+    // passa a cor base
+    btn.style.setProperty("--corBase", c);
+
+    // escurece de verdade e salva no elemento
+    const corEscura = `color-mix(in srgb, ${c} 75%, black)`;
+    btn.style.background = corEscura;
+    btn.dataset.cor = corEscura;   // 🔥 salva para uso posterior
+
+    btn.onclick = ()=>selecionarCor(btn, corEscura);
     colorArea.appendChild(btn);
 });
+
+
 
 function selecionarCor(btn,cor){
     document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('color-selected'));
@@ -147,10 +415,16 @@ function selecionarCor(btn,cor){
 }
 
 function confirmarCor(){
-    if(!corEscolhida){ alert("Selecione uma cor!"); return; }
+    if(!corEscolhida){ 
+        alert("Selecione uma cor!"); 
+        return; 
+    }
+
     aplicarCorFundo();
+    pintarBotoes(corEscolhida);
     trocarTela('tela2');
 }
+
 
 function aplicarCorFundo(){
     document.querySelectorAll('.tela').forEach(t=>{
@@ -158,6 +432,14 @@ function aplicarCorFundo(){
         t.style.setProperty('--corTema', corEscolhida);
     });
 }
+
+function pintarBotoes(cor) {
+    document.querySelectorAll("button").forEach(btn => {
+        btn.style.background = cor;
+        btn.style.animation = "none"; // remove degradê
+    });
+}
+
 
 function trocarTela(id){
     document.querySelectorAll('.tela').forEach(t=>t.style.display='none');
@@ -170,9 +452,36 @@ function mostrarTema(){
     trocarTela('telaTema');
 }
 
+function ocultarNumero(){
+    const box = document.getElementById("resultadoTextoNumero");
+
+    box.innerHTML = `
+        <div class="ocultar-glow" style="
+            background:${corEscolhida};
+        "></div>
+    `;
+
+    document.getElementById("btnOcultar").style.display='none';
+    document.getElementById("btnTema").style.display='none';
+    document.getElementById("btnOutro").style.display='none';
+    document.getElementById("btnMostrar").style.display='inline-block';
+}
+
 function mostrarNumero(){
     const box = document.getElementById("resultadoTextoNumero");
+
+    if (ultimoNumero !== null && document.getElementById("btnMostrar").style.display === 'inline-block') {
+        box.innerHTML = `<span>${ultimoNumero}</span>`;
+        document.getElementById("btnMostrar").style.display='none';
+        document.getElementById("btnOcultar").style.display='inline-block';
+        document.getElementById("btnTema").style.display='inline-block';
+        document.getElementById("btnOutro").style.display='inline-block';
+        trocarTela('telaNumero');
+        return;
+    }
+
     let count = 0;
+    ultimoNumero = null;
 
     document.getElementById("btnOcultar").style.display='none';
     document.getElementById("btnTema").style.display='none';
@@ -185,8 +494,8 @@ function mostrarNumero(){
         count++;
         if(count >= 18){
             clearInterval(roll);
-            const final = Math.floor(Math.random()*100)+1;
-            box.innerHTML = `<span>${final}</span>`;
+            ultimoNumero = Math.floor(Math.random()*100)+1;
+            box.innerHTML = `<span>${ultimoNumero}</span>`;
             document.getElementById("btnOcultar").style.display='inline-block';
             document.getElementById("btnTema").style.display='inline-block';
             document.getElementById("btnOutro").style.display='inline-block';
@@ -197,13 +506,39 @@ function mostrarNumero(){
 }
 
 function ocultarNumero(){
-    const box=document.getElementById("resultadoTextoNumero");
-    box.innerHTML = `<div style='width:100%; height:200px; background:${corEscolhida}; border-radius:12px;'></div>`;
+    const box = document.getElementById("resultadoTextoNumero");
+
+    box.innerHTML = `
+        <div class="ocultar-degrade" style="--cor:${corEscolhida};"></div>
+    `;
+
     document.getElementById("btnOcultar").style.display='none';
     document.getElementById("btnTema").style.display='none';
     document.getElementById("btnOutro").style.display='none';
     document.getElementById("btnMostrar").style.display='inline-block';
 }
+
+function mostrarTema() {
+    const t = temas[Math.floor(Math.random() * temas.length)];
+
+    // título do tema
+    document.getElementById("resultadoTextoTema").innerText = t.nome;
+
+    // explicação 1–100
+    document.getElementById("temaExplicacao").innerHTML = `
+        <div class="labels">
+            <span>1 ${t.max}</span>
+            <span>${t.min} 100</span>
+        </div>
+        <div class="linha-container">
+            <hr>
+        </div>
+    `;
+
+    trocarTela('telaTema');
+}
+
+
 </script>
 
 </body>
