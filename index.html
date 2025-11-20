@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jogo ITO</title>
     <style>
-        :root {
-            --safe-height: 100dvh;
-        }
+        :root { --safe-height: 100dvh; }
         body {
             font-family: Arial, sans-serif;
             background: #0d0d0d;
@@ -68,57 +66,68 @@
             font-size: clamp(40px, 12vw, 70px);
             animation: pulse 2s infinite;
         }
-        #resultadoTextoNumero span {
-            font-size: clamp(80px, 25vw, 160px) !important;
-        }
         @keyframes pulse {
             0% { transform: scale(1); text-shadow: 0 0 10px #b84bff; }
             50% { transform: scale(1.1); text-shadow: 0 0 22px #d28bff; }
             100% { transform: scale(1); text-shadow: 0 0 10px #b84bff; }
         }
+        #resultadoTextoNumero span {
+            font-size: clamp(140px, 34vw, 260px);
+            line-height: 1;
+            display: block;
+        }
+        .small-btn {
+            padding: 6px 10px;
+            margin-top: 6px;
+            width: 60%;
+            font-size: clamp(10px, 2.8vw, 14px);
+            background: #333;
+            border: none;
+            color: white;
+            border-radius: 8px;
+        }
         .glow { box-shadow: 0 0 28px var(--corTema); }
-        @media (max-height: 600px){ h1 { font-size: 32px; } }
     </style>
 </head>
 <body>
 
-<!-- TELA INICIAL -->
 <div id="telaInicio" class="tela" style="display:block;">
     <h1>ITO</h1>
     <button onclick="trocarTela('tela1')">Começar</button>
 </div>
 
-<!-- SELEÇÃO DE COR -->
 <div id="tela1" class="tela">
     <h2>Escolha sua cor</h2>
     <div class="players" id="colorArea"></div>
     <button onclick="confirmarCor()">Confirmar</button>
 </div>
 
-<!-- MENU -->
 <div id="tela2" class="tela">
     <h2>O que deseja sortear?</h2>
     <button onclick="mostrarTema()">Sortear Tema</button>
     <button onclick="mostrarNumero()">Sortear Número</button>
 </div>
 
-<!-- TEMA -->
 <div id="telaTema" class="tela">
     <h2 id="resultadoTextoTema"></h2>
     <button class="small-btn" onclick="mostrarNumero()">Sortear Número</button>
     <button class="small-btn" onclick="mostrarTema()">Sortear Novamente</button>
 </div>
 
-<!-- NÚMERO -->
 <div id="telaNumero" class="tela">
     <div id="resultadoTextoNumero"></div>
     <button id="btnOcultar" class="small-btn" style="display:none;" onclick="ocultarNumero()">Ocultar</button>
-    <button class="small-btn" onclick="mostrarTema()">Sortear Tema</button>
-    <button class="small-btn" onclick="mostrarNumero()">Sortear Outro Número</button>
+    <button id="btnTema" class="small-btn" onclick="mostrarTema()">Sortear Tema</button>
+    <button id="btnOutro" class="small-btn" onclick="mostrarNumero()">Sortear Outro Número</button>
+    <button id="btnMostrar" class="small-btn" style="display:none;" onclick="mostrarNumero()">Mostrar Número</button>
 </div>
 
 <script>
-const temas = ["Nível de Estresse: 'Relax total' a 'Vou explodir!'","Nível de Fofura: 'Sem graça' a 'Vontade de apertar!'"];
+const temas = [
+    "Nível de Estresse: 'Relax total' a 'Vou explodir!'",
+    "Nível de Fofura: 'Sem graça' a 'Vontade de apertar!'"
+];
+
 let corEscolhida = null;
 const cores = ["red","blue","green","purple","orange","pink","yellow","brown","black","gray"];
 const colorArea = document.getElementById("colorArea");
@@ -162,10 +171,28 @@ function mostrarTema(){
 }
 
 function mostrarNumero(){
-    const n = Math.floor(Math.random()*100)+1;
-    const box=document.getElementById("resultadoTextoNumero");
-    box.innerHTML = `<span style='font-size:120px; font-weight:bold; display:block;'>${n}</span>`;
-    document.getElementById("btnOcultar").style.display='inline-block';
+    const box = document.getElementById("resultadoTextoNumero");
+    let count = 0;
+
+    document.getElementById("btnOcultar").style.display='none';
+    document.getElementById("btnTema").style.display='none';
+    document.getElementById("btnOutro").style.display='none';
+    document.getElementById("btnMostrar").style.display='none';
+
+    const roll = setInterval(()=>{
+        const r = Math.floor(Math.random()*100)+1;
+        box.innerHTML = `<span style='opacity:0.6;'>${r}</span>`;
+        count++;
+        if(count >= 18){
+            clearInterval(roll);
+            const final = Math.floor(Math.random()*100)+1;
+            box.innerHTML = `<span>${final}</span>`;
+            document.getElementById("btnOcultar").style.display='inline-block';
+            document.getElementById("btnTema").style.display='inline-block';
+            document.getElementById("btnOutro").style.display='inline-block';
+        }
+    }, 55);
+
     trocarTela('telaNumero');
 }
 
@@ -173,6 +200,9 @@ function ocultarNumero(){
     const box=document.getElementById("resultadoTextoNumero");
     box.innerHTML = `<div style='width:100%; height:200px; background:${corEscolhida}; border-radius:12px;'></div>`;
     document.getElementById("btnOcultar").style.display='none';
+    document.getElementById("btnTema").style.display='none';
+    document.getElementById("btnOutro").style.display='none';
+    document.getElementById("btnMostrar").style.display='inline-block';
 }
 </script>
 
